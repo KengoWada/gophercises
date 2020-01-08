@@ -34,10 +34,9 @@ func main() {
 		question := row[0]
 		answer := row[1]
 
-		fmt.Println(question)
+		fmt.Printf("%v = ", question)
 
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Enter text: ")
 		text, _ := reader.ReadString('\n')
 		text = strings.TrimSuffix(text, "\n")
 
