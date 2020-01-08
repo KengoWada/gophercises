@@ -1,50 +1,62 @@
 package main
 
 import (
-	"bufio"
 	"encoding/csv"
+	"flag"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
 
 func main() {
-	file, err := os.Open("problems.csv")
+	csvFileName := flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
+	flag.Parse()
+
+	file, err := os.Open(*csvFileName)
 	if err != nil {
-		fmt.Println("Error reading file")
-	}
-	defer file.Close()
-
-	csvr := csv.NewReader(file)
-
-	correctCounter := 0
-	questionCounter := 0
-
-	for {
-		row, err := csvr.Read()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			panic(err)
-		}
-
-		question := row[0]
-		answer := row[1]
-
-		fmt.Printf("%v = ", question)
-
-		reader := bufio.NewReader(os.Stdin)
-		text, _ := reader.ReadString('\n')
-		text = strings.TrimSuffix(text, "\n")
-
-		if text == answer {
-			correctCounter++
-		}
-		questionCounter++
+		exit(fmt.Sprintf("Failed to open the CSV file: %s\n", *csvFileName))
 	}
 
-	fmt.Printf("You got %v correct out of %v\n", correctCounter, questionCounter)
+	r := csv.NewReader(file)
+
+	rows, err := r.ReadAll()
+	if err != nil {
+		exit("Failed to parse csv file")
+	}
+
+	problems := parseRows(rows)
+	correctAnswers := 0
+
+	for i, p := range problems {
+		fmt.Printf("Problem #%d: %s = ", i+1, p.question)
+		var answer string
+		fmt.Scanf("%s\n", &answer)
+		if answer == p.answer {
+			correctAnswers++
+		}
+	}
+
+	fmt.Printf("You got %d correct answers out %d questions\n", correctAnswers, len(problems))
+}
+
+func parseRows(rows [][]string) []problem {
+	problems := make([]problem, len(rows))
+	for i, row := range rows {
+		problems[i] = problem{
+			question: row[0],
+			answer:   strings.TrimSpace(row[1]),
+		}
+	}
+
+	return problems
+}
+
+type problem struct {
+	question string
+	answer   string
+}
+
+func exit(message string) {
+	fmt.Println(message)
+	os.Exit(1)
 }
